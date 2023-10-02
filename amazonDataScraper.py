@@ -12,67 +12,73 @@ def amazon_search( api_basic_auth_token, query, url, headers):
       "page_from": "1"
       }
     response = requests.post(url, json=payload, headers=headers)
-    response_json= response.json().get('results')[0].get('content').get('results').get('paid')
-    data= df = pd.DataFrame(response_json)
-    print(response_json)
-    df.to_excel('output_excel_amazon_search.xlsx', index=False)
+    response_json_paid= response.json().get('results')[0].get('content').get('results').get('paid')
+    response_json_organic= response.json().get('results')[0].get('content').get('results').get('organic')
+    response_json_amazon_choices= response.json().get('results')[0].get('content').get('results').get('amazons_choices')
+    df = pd.DataFrame(response_json_paid)
+    df_organic= pd.DataFrame(response_json_organic)
+    df_amazon_choices= pd.DataFrame(response_json_amazon_choices)
+    df.to_excel('output_excel_amazon_search_paid.xlsx')
+    df_organic.to_excel('output_excel_amazon_search_organic.xlsx')
+    df_amazon_choices.to_excel('output_excel_amazon_search_amazon_choices.xlsx')
     
 
-def amazon_bestsellers(api_basic_auth_token, query, url, headers):
-    payload = {
-      "target": "amazon_bestsellers",
-      "query": str(query),
-      "parse": True,
-      "domain": "in",
-       "device_type": "desktop",
-      "geo": "10001"
-      }
-    response = requests.post(url, json=payload, headers=headers)
-    print(response.text)
 
 def amazon_product(api_basic_auth_token, query, url, headers):
     payload = {
       "target": "amazon_product",
-      "query": "B09H74FXNW",
+      "query": str(query),
       "domain": "in",
       "device_type": "desktop",
       "parse": True
       }
     response = requests.post(url, json=payload, headers=headers)
     print(response.text)
+    response_json= response.json().get('results')[0].get('content')
+    df = pd.DataFrame(response_json)
+    df.to_excel('output_excel_amazon_product'+str(query)+'.xlsx', index=False)
 
 def amazon_pricing(api_basic_auth_token, query, url, headers):
     payload = {
       "target": "amazon_pricing",
-      "query": "B09H74FXNW",
+      "query": str(query),
       "domain": "in",
       "device_type": "desktop",
       "parse": True
       }
     response = requests.post(url, json=payload, headers=headers)
     print(response.text)
+    response_json= response.json().get('results')[0].get('content')
+    df = pd.DataFrame(response_json)
+    df.to_excel('output_excel_amazon_pricing'+str(query)+'.xlsx')
 
 def amazon_questions(api_basic_auth_token, query, url, headers):
     payload = {
       "target": "amazon_questions",
-      "query": "B09H74FXNW",
+      "query": str(query),
       "domain": "in",
       "device_type": "desktop",
       "parse": True
       }
     response = requests.post(url, json=payload, headers=headers)
     print(response.text)
+    response_json= response.json().get('results')[0].get('content').get('questions')
+    df = pd.DataFrame(response_json)
+    df.to_excel('output_excel_amazon_questions'+str(query)+'.xlsx', index=False)
 
 def amazon_reviews(api_basic_auth_token, query, url, headers):
     payload = {
       "target": "amazon_reviews",
-      "query": "B09H74FXNW",
+      "query": str(query),
       "domain": "in",
       "device_type": "desktop",
       "parse": True
       }
     response = requests.post(url, json=payload, headers=headers)
     print(response.text)
+    response_json= response.json().get('results')[0].get('content').get('reviews')
+    df = pd.DataFrame(response_json)
+    df.to_excel('output_excel_amazon_reviews'+str(query)+'.xlsx', index=False)
 
 
 
@@ -91,20 +97,18 @@ headers = {
     "authorization": "Basic "+ str(api_basic_auth)
    }
 
-excel= pd.read_excel('input.xlsx')
+excel_amazon_search= pd.read_excel('input_amazon_search.xlsx')
+excel_amazon_product= pd.read_excel('input_amazon_product.xlsx')
 
-print(excel)
+print(excel_amazon_search)
+print(excel_amazon_product)
 
-for row in excel.itertuples():
+#for row in excel_amazon_search.itertuples():
+#   print("\n\n\n")
+#    amazon_search(api_basic_auth_token=api_basic_auth,query=row[1], url=url, headers=headers)
+for row in excel_amazon_product.itertuples():    
     print("\n\n\n")
-    print(row[1])
-    print("\n\n\n")
-    amazon_search(api_basic_auth_token=api_basic_auth,query=row[1], url=url, headers=headers)
-    #print("\n\n\n")
-    #amazon_bestsellers(api_basic_auth_token=api_basic_auth,query=row[1], url=url, headers=headers)
-    print("\n\n\n")
-    break;
-    amazon_product(api_basic_auth_token=api_basic_auth,query=row[1], url=url, headers=headers)
+    #amazon_product(api_basic_auth_token=api_basic_auth,query=row[1], url=url, headers=headers)
     print("\n\n\n")
     amazon_pricing(api_basic_auth_token=api_basic_auth,query=row[1], url=url, headers=headers)
     print("\n\n\n")
@@ -112,3 +116,4 @@ for row in excel.itertuples():
     print("\n\n\n")
     amazon_reviews(api_basic_auth_token=api_basic_auth,query=row[1], url=url, headers=headers)
     exit();
+    
