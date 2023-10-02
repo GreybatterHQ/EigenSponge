@@ -12,7 +12,11 @@ def amazon_search( api_basic_auth_token, query, url, headers):
       "page_from": "1"
       }
     response = requests.post(url, json=payload, headers=headers)
-    print(response.text)
+    response_json= response.json().get('results')[0].get('content').get('results').get('paid')
+    data= df = pd.DataFrame(response_json)
+    print(response_json)
+    df.to_excel('output_excel_amazon_search.xlsx', index=False)
+    
 
 def amazon_bestsellers(api_basic_auth_token, query, url, headers):
     payload = {
@@ -96,9 +100,10 @@ for row in excel.itertuples():
     print(row[1])
     print("\n\n\n")
     amazon_search(api_basic_auth_token=api_basic_auth,query=row[1], url=url, headers=headers)
+    #print("\n\n\n")
+    #amazon_bestsellers(api_basic_auth_token=api_basic_auth,query=row[1], url=url, headers=headers)
     print("\n\n\n")
-    amazon_bestsellers(api_basic_auth_token=api_basic_auth,query=row[1], url=url, headers=headers)
-    print("\n\n\n")
+    break;
     amazon_product(api_basic_auth_token=api_basic_auth,query=row[1], url=url, headers=headers)
     print("\n\n\n")
     amazon_pricing(api_basic_auth_token=api_basic_auth,query=row[1], url=url, headers=headers)
@@ -106,3 +111,4 @@ for row in excel.itertuples():
     amazon_questions(api_basic_auth_token=api_basic_auth,query=row[1], url=url, headers=headers)
     print("\n\n\n")
     amazon_reviews(api_basic_auth_token=api_basic_auth,query=row[1], url=url, headers=headers)
+    exit();
