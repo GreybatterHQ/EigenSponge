@@ -16,8 +16,7 @@ def request_handler(url, method, data=None, headers=None, params=None):
         # Raise an exception for 4xx and 5xx status codes
         response.raise_for_status()
 
-        # Process the response data if the request was successful
-        return response.json()  # or response.json() for JSON response
+        return response.json()
 
     except requests.exceptions.HTTPError as http_err:
         print(f'HTTP error occurred: {http_err}')
