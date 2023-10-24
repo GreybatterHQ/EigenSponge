@@ -13,12 +13,11 @@ import requests
 import pandas as pd
 from openpyxl import load_workbook, Workbook
 from enum import Enum
-import numpy as np
 from utils.http_utils import request_handler
 from utils.excel_utils import save_dataFrame_to_excel
 
 result_directory = 'output'
-file_name = 'amazon_search.xlsx'
+file_name = 'output_excel_amazon.xlsx'
 
 class SheetName(Enum):
     PAID = "paid"
@@ -29,7 +28,29 @@ class SheetName(Enum):
     PRODUCTS = "products"
     QUESTIONS = "questions"
 
-def amazon_search(api_basic_auth_token, query, url, headers):
+class AmazonScraper:
+  header = {}
+  def __init__(self, url, config_path):
+    self.url = url
+    self.config_path = config_path
+    self.reviews_df = pd.DataFrame()
+    self.products_df = pd.DataFrame()
+    self.questions_df = pd.DataFrame()
+    self.pricing_df = pd.DataFrame()
+    self.paid_search_df = pd.DataFrame()
+    self.amazon_choices_search_df = pd.DataFrame()
+    self.organic_search_df = pd.DataFrame()
+
+  def init_api_auth(self):
+    with open(self.config_path,"r") as config_file:
+      config = json.load(config_file)
+    self.headers = {
+          "accept": "application/json",
+          "content-type": "application/json",
+          "authorization": "Basic "+ config['api_basic_auth_token']
+    }
+
+  def amazon_search(self, query):
     payload = {
       "target": "amazon_search",
       "query": str(query),
@@ -39,19 +60,15 @@ def amazon_search(api_basic_auth_token, query, url, headers):
       "page_from": "1"
       }
 
-    response_json = request_handler(url, 'POST', data=payload, headers=headers)
+    response_json = request_handler(self.url, 'POST', data=payload, headers=self.headers)
     results = response_json.get('results')[0].get('content').get('results')
 
-
-    df_paid = pd.DataFrame(results.get('paid'))
-    df_organic= pd.DataFrame(results.get('organic'))
-    df_amazon_choices= pd.DataFrame(results.get('amazons_choices'))
-    save_dataFrame_to_excel(file_name, SheetName.PAID.value, df_paid, result_directory)
-    save_dataFrame_to_excel(file_name, SheetName.ORGANIC.value, df_organic, result_directory)
-    save_dataFrame_to_excel(file_name, SheetName.AMAZON_CHOICES.value, df_amazon_choices, result_directory)
+    self.paid_search_df = self.paid_search_df.append(results.get('paid'))
+    self.organic_search_df = self.organic_search_df.append(results.get('organic'))
+    self.amazon_choices_search_df = self.amazon_choices_search_df.append(results.get('amazons_choices'))
 
 
-def amazon_product(api_basic_auth_token, query, url, headers):
+  def amazon_product(self, query):
     payload = {
       "target": "amazon_product",
       "query": str(query),
@@ -60,13 +77,22 @@ def amazon_product(api_basic_auth_token, query, url, headers):
       "parse": True
       }
     print(query)
-    response_json = request_handler(url, 'POST', payload, headers)
-    result = response_json.get('results')[0].get('content')
+    try:
+      response_json = request_handler(self.url, 'POST', payload, self.headers)
+      result = response_json.get('results')[0].get('content')
+    except Exception as e:
+      print(f'error occurred while fetching data {e}')
+      return
     if 'ads' in result:
         result = result['ads']
-        save_dataFrame_to_excel('output_excel_amazon.xlsx', SheetName.PRODUCTS.value, pd.DataFrame(result), result_directory)
+        try:
+          self.products_df = self.products_df.append(pd.DataFrame(result))
+        except Exception as e:
+          print(f"an error occurred {e}")
+          return
 
-def amazon_pricing(api_basic_auth_token, query, url, headers):
+
+  def amazon_pricing(self, query):
     payload = {
       "target": "amazon_pricing",
       "query": str(query),
@@ -74,11 +100,16 @@ def amazon_pricing(api_basic_auth_token, query, url, headers):
       "device_type": "desktop",
       "parse": True
       }
-    response_json = request_handler(url, 'POST', payload, headers)
-    result = response_json.get('results')[0].get('content')
-    save_dataFrame_to_excel('output_excel_amazon.xlsx', SheetName.PRICING.value, pd.DataFrame(result), result_directory)
+    response_json = request_handler(self.url, 'POST', payload, self.headers)
+    result = response_json.get('results')[0].get('content')    
+    try:
+      self.pricing_df = self.products_df.append(pd.DataFrame(result))
+    except Exception as e:
+      print(f"An error occurred: {e}")
+      return
 
-def amazon_questions(api_basic_auth_token, query, url, headers):
+
+  def amazon_questions(self, query):
     payload = {
       "target": "amazon_questions",
       "query": str(query),
@@ -87,11 +118,15 @@ def amazon_questions(api_basic_auth_token, query, url, headers):
       "parse": True
       }
 
-    response_json = request_handler(url, 'POST', payload, headers)
+    response_json = request_handler(self.url, 'POST', payload, self.headers)
     questions = response_json.get('results')[0].get('content').get('questions')
-    save_dataFrame_to_excel('output_excel_amazon.xlsx', SheetName.QUESTIONS.value, pd.DataFrame(questions), result_directory)
+    try:
+      self.questions_df = self.questions_df.append(pd.DataFrame(questions))
+    except Exception as e:
+      print(f"An error occurred: {e}")
+      return
 
-def amazon_reviews(api_basic_auth_token, query, url, headers):
+  def amazon_reviews(self, query):
     payload = {
       "target": "amazon_reviews",
       "query": str(query),
@@ -99,45 +134,43 @@ def amazon_reviews(api_basic_auth_token, query, url, headers):
       "device_type": "desktop",
       "parse": True
       }
-    response_json = request_handler(url, 'POST', payload, headers)
+    response_json = request_handler(self.url, 'POST', payload, self.headers)
     reviews = response_json.get('results')[0].get('content').get('reviews')
-    save_dataFrame_to_excel('output_excel_amazon.xlsx', SheetName.REVIEWS.value, pd.DataFrame(reviews), result_directory)
+    try:
+      self.reviews_df = self.reviews_df.append(pd.DataFrame(reviews))
+    except Exception as e:
+      print(f"An error occurred: {e}")
+      return
 
-def init_api_auth(config_path):
-  with open(config_path,"r") as config_file:
-    config = json.load(config_file)
-  return config['api_basic_auth_token']
+  def scrape_amazon_data(self):
+    self.init_api_auth()
 
+    try:
+      excel_amazon_search= pd.read_excel('input_amazon_search.xlsx')
+      excel_amazon_product= pd.read_excel('input_amazon_product.xlsx')
+    except FileNotFoundError:
+      print('input file not found')
+      exit()
 
-def scrape_amazon_data():
-  api_basic_auth = init_api_auth("config_2.json")
-  url = "https://scrape.smartproxy.com/v1/tasks"
-  headers = {
-        "accept": "application/json",
-        "content-type": "application/json",
-        "authorization": "Basic "+ api_basic_auth
-    }
+    # print('printing the search input:', excel_amazon_search)
+    # print('amazon product:',excel_amazon_product)
 
-  try:
-    excel_amazon_search= pd.read_excel('input_amazon_search.xlsx')
-    excel_amazon_product= pd.read_excel('input_amazon_product.xlsx')
-  except FileNotFoundError:
-    print('input file not found')
-    exit()
-
-  # print('printing the search input:', excel_amazon_search)
-  # print('amazon product:',excel_amazon_product)
-
-  # for row in excel_amazon_search.itertuples():
-    # print("\n\n\n")
-    # amazon_search(api_basic_auth_token=api_basic_auth,query=row[1], url=url, headers=headers)
-  for row in excel_amazon_product.itertuples():    
-  #   print("\n\n\n")
-    amazon_product(api_basic_auth_token=api_basic_auth,query=row[1], url=url, headers=headers)
-  #   print("\n\n\n")
-    # amazon_pricing(api_basic_auth_token=api_basic_auth,query=row[1], url=url, headers=headers)
-  #   print("\n\n\n")
-    # amazon_questions(api_basic_auth_token=api_basic_auth,query=row[1], url=url, headers=headers)
-  #   print("\n\n\n")
-    # amazon_reviews(api_basic_auth_token=api_basic_auth,query=row[1], url=url, headers=headers)
+    for row in excel_amazon_search.itertuples():
+      self.amazon_search(query=row[1])
     
+    save_dataFrame_to_excel(file_name, SheetName.PAID.value, self.paid_search_df, result_directory)
+    save_dataFrame_to_excel(file_name, SheetName.ORGANIC.value, self.organic_search_df, result_directory)
+    save_dataFrame_to_excel(file_name, SheetName.AMAZON_CHOICES.value, self.amazon_choices_search_df, result_directory)
+    for row in excel_amazon_product.itertuples():
+      # print("\n\n\n")
+      self.amazon_product(query=row[1])
+      # print("\n\n\n")
+      self.amazon_pricing(query=row[1])
+      # print("\n\n\n")
+      self.amazon_questions(query=row[1])
+      # print("\n\n\n")
+      self.amazon_reviews(query=row[1])
+    save_dataFrame_to_excel(file_name, SheetName.PRODUCTS.value, self.products_df, result_directory)
+    save_dataFrame_to_excel(file_name, SheetName.PRICING.value, self.pricing_df, result_directory)
+    save_dataFrame_to_excel(file_name, SheetName.QUESTIONS.value, self.questions_df, result_directory)
+    save_dataFrame_to_excel(file_name, SheetName.REVIEWS.value, self.reviews_df, result_directory)
