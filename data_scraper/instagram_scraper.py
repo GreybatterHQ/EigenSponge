@@ -7,7 +7,7 @@ from utils.excel_utils import save_dataFrame_to_excel
 class InstagramScraper:
     header = {}
     file_name = 'instagram_output.xlsx'
-    output_directory = 'output'
+    output_directory = None
 
     def __init__(self, url, config_path):
         self.url = url
@@ -57,7 +57,19 @@ class InstagramScraper:
         self.posts_df = self.posts_df.append(pd.DataFrame(post_details))
         users
 
-    def scrape_data(self):
+    def scrape_data(self, input_file):
         print('initialized instagram scraper')
-        users_ids = self.scrape_hashtag_data('pizza')
-        save_dataFrame_to_excel(self.file_name, 'posts', self.posts_df, self.output_directory)
+        try:
+            instagram_search = pd.read_excel(input_file)
+        except FileNotFoundError:
+            print('input file not found')
+            exit()
+
+        for row in instagram_search.itertuples(index=False):
+            if pd.isna(row[0]) or row[0] == "":
+                query = row[1]
+            else:
+                query = f"{row[0]}{row[1]}"
+            print('search query:', query)
+            users_ids = self.scrape_hashtag_data(query)
+        save_dataFrame_to_excel(input_file, 'posts', self.posts_df, self.output_directory)

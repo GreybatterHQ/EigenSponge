@@ -7,7 +7,7 @@ def main():
     amazon.scrape_amazon_data('input_amazon_search.xlsx', 'input_amazon_product.xlsx')
 
     instagram = InstagramScraper("https://scraper-api.smartproxy.com/v2/scrape", "config_2.json")
-    instagram.scrape_data()
+    instagram.scrape_data("instagram_input_sheet.xlsx")
 
     reddit = RedditScraper("https://scraper-api.smartproxy.com/v2/scrape", "config_2.json")
     reddit.scrape_data("reddit_input_sheet.xlsx")
