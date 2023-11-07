@@ -1,22 +1,11 @@
-import sys
-import os
-# Get the current directory path
-current_dir = os.path.dirname(os.path.abspath(__file__))
-
-# Get the parent directory path
-parent_dir = os.path.dirname(current_dir)
-
-# Append the parent directory to the system path
-sys.path.append(parent_dir)
+import __init__
 import json
-import requests
 import pandas as pd
-from openpyxl import load_workbook, Workbook
 from enum import Enum
 from utils.http_utils import request_handler
 from utils.excel_utils import save_dataFrame_to_excel
 
-result_directory = 'output'
+result_directory = None
 file_name = 'output_excel_amazon.xlsx'
 
 class SheetName(Enum):
@@ -120,6 +109,8 @@ class AmazonScraper:
 
     response_json = request_handler(self.url, 'POST', payload, self.headers)
     questions = response_json.get('results')[0].get('content').get('questions')
+    for question in questions:
+      question['asin'] = response_json.get('results')[0].get('content').get('asin')
     try:
       self.questions_df = self.questions_df.append(pd.DataFrame(questions))
     except Exception as e:
@@ -136,18 +127,20 @@ class AmazonScraper:
       }
     response_json = request_handler(self.url, 'POST', payload, self.headers)
     reviews = response_json.get('results')[0].get('content').get('reviews')
+    for review in reviews:
+      review['asin'] = response_json.get('results')[0].get('content').get('asin')
     try:
       self.reviews_df = self.reviews_df.append(pd.DataFrame(reviews))
     except Exception as e:
       print(f"An error occurred: {e}")
       return
 
-  def scrape_amazon_data(self):
+  def scrape_amazon_data(self, search_file, product_file):
     self.init_api_auth()
 
     try:
-      excel_amazon_search= pd.read_excel('input_amazon_search.xlsx')
-      excel_amazon_product= pd.read_excel('input_amazon_product.xlsx')
+      excel_amazon_search = pd.read_excel(search_file)
+      excel_amazon_product = pd.read_excel(product_file)
     except FileNotFoundError:
       print('input file not found')
       exit()
@@ -155,22 +148,28 @@ class AmazonScraper:
     # print('printing the search input:', excel_amazon_search)
     # print('amazon product:',excel_amazon_product)
 
-    for row in excel_amazon_search.itertuples():
-      self.amazon_search(query=row[1])
+    for row in excel_amazon_search.itertuples(index=False):
+      if pd.isna(row[0]) or row[0] == "":
+        query = row[1]
+      else:
+        query = f"{row[0]} {row[1]}"
+      print('search query:', query)
+      self.amazon_search(query)
     
-    save_dataFrame_to_excel(file_name, SheetName.PAID.value, self.paid_search_df, result_directory)
-    save_dataFrame_to_excel(file_name, SheetName.ORGANIC.value, self.organic_search_df, result_directory)
-    save_dataFrame_to_excel(file_name, SheetName.AMAZON_CHOICES.value, self.amazon_choices_search_df, result_directory)
-    for row in excel_amazon_product.itertuples():
+    save_dataFrame_to_excel(search_file, SheetName.PAID.value, self.paid_search_df, result_directory)
+    save_dataFrame_to_excel(search_file, SheetName.ORGANIC.value, self.organic_search_df, result_directory)
+    save_dataFrame_to_excel(search_file, SheetName.AMAZON_CHOICES.value, self.amazon_choices_search_df, result_directory)
+    for row in excel_amazon_product.itertuples(index=False):
+      query = row[0]
       # print("\n\n\n")
-      self.amazon_product(query=row[1])
+      self.amazon_product(query)
       # print("\n\n\n")
-      self.amazon_pricing(query=row[1])
+      self.amazon_pricing(query)
       # print("\n\n\n")
-      self.amazon_questions(query=row[1])
+      self.amazon_questions(query)
       # print("\n\n\n")
-      self.amazon_reviews(query=row[1])
-    save_dataFrame_to_excel(file_name, SheetName.PRODUCTS.value, self.products_df, result_directory)
-    save_dataFrame_to_excel(file_name, SheetName.PRICING.value, self.pricing_df, result_directory)
-    save_dataFrame_to_excel(file_name, SheetName.QUESTIONS.value, self.questions_df, result_directory)
-    save_dataFrame_to_excel(file_name, SheetName.REVIEWS.value, self.reviews_df, result_directory)
+      self.amazon_reviews(query)
+    save_dataFrame_to_excel(product_file, SheetName.PRODUCTS.value, self.products_df, result_directory)
+    save_dataFrame_to_excel(product_file, SheetName.PRICING.value, self.pricing_df, result_directory)
+    save_dataFrame_to_excel(product_file, SheetName.QUESTIONS.value, self.questions_df, result_directory)
+    save_dataFrame_to_excel(product_file, SheetName.REVIEWS.value, self.reviews_df, result_directory)
