@@ -15,6 +15,7 @@ class InstagramScraper:
         self.hashtag_df = pd.DataFrame()
         self.posts_df = pd.DataFrame()
         self.users_df = pd.DataFrame()
+        self.users_post = pd.DataFrame()
 
     def init_api_auth(self, config_path):
         with open(config_path,"r") as config_file:
@@ -56,6 +57,35 @@ class InstagramScraper:
         print('users list:', users)
         self.posts_df = self.posts_df.append(pd.DataFrame(post_details))
         users
+
+    def scrape_user_data(self, profile):
+        payload = {
+            "url": f'https://www.instagram.com/{profile}',
+            "target": "instagram_profile"
+        }
+        try:
+            response_json = request_handler(self.url, 'POST', payload, self.header)
+        except Exception as e:
+            print(f'An error occurred while fetching user profile data for {profile}: {e}')
+            return
+        user_data = response_json["results"][0]["content"]["account"]
+        stats = response_json["results"][0]["content"]["stats"]
+        posts = response_json["results"][0]["content"]["posts"]
+
+        self.users_df = self.users_df.append(pd.DataFrame([{
+            "username": user_data["username"],
+            "verified": user_data["verified"],
+            "posts": stats["posts"],
+            "followers": stats["followers"],
+            "following": stats["following"],
+        }]))
+
+        for post in posts:
+            self.users_post = self.users_post.append(pd.DataFrame([{
+                "username": user_data["username"],
+                "post URL": post["href"],
+                "post description": post["description"]
+            }]))
 
     def scrape_data(self, input_file):
         print('initialized instagram scraper')
