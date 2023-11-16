@@ -90,7 +90,8 @@ class InstagramScraper:
     def scrape_data(self, input_file):
         print('initialized instagram scraper')
         try:
-            instagram_search = pd.read_excel(input_file)
+            instagram_search = pd.read_excel(input_file, sheet_name='queries')
+            instagram_users = pd.read_excel(input_file, sheet_name='users')
         except FileNotFoundError:
             print('input file not found')
             exit()
@@ -103,3 +104,11 @@ class InstagramScraper:
             print('search query:', query)
             users_ids = self.scrape_hashtag_data(query)
         save_dataFrame_to_excel(input_file, 'posts', self.posts_df, self.output_directory)
+
+        for row in instagram_users.itertuples(index=False):
+            username = row[0]
+            print('user:', username)
+            self.scrape_user_data(username)
+
+        save_dataFrame_to_excel(input_file, 'user_data', self.users_df, self.output_directory)
+        save_dataFrame_to_excel(input_file, 'user_posts', self.users_post, self.output_directory)
