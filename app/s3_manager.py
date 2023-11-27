@@ -99,13 +99,13 @@ class S3Manager(CloudStorageInterface):
         if file_format == "excel":
             # Use ExcelWriter for multiple sheets
             with pd.ExcelWriter(file_buffer, engine="xlsxwriter") as writer:
-                for sheet_name, dataframe in dataFrame_dict.items():
-                    dataframe.to_excel(writer, sheet_name=sheet_name, index=False)
+                for sheet_name, dataFrame in dataFrame_dict.items():
+                    dataFrame.to_excel(writer, sheet_name=sheet_name, index=False)
             file_extension = "xlsx"
         elif file_format == "csv":
             # Use StringIO for CSV
-            for sheet_name, dataframe in dataFrame_dict.items():
-                csv_content = dataframe.to_csv(index=False)
+            for sheet_name, dataFrame in dataFrame_dict.items():
+                csv_content = dataFrame.to_csv(index=False)
                 file_buffer.write(csv_content.encode())
             file_extension = "csv"
         else:
