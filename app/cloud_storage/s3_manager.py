@@ -1,7 +1,7 @@
 import pandas as pd
 import boto3
 from io import BytesIO, StringIO
-from app.cloud_storage_interface import CloudStorageInterface
+from app.cloud_storage.cloud_storage_interface import CloudStorageInterface
 
 
 class S3Manager(CloudStorageInterface):
