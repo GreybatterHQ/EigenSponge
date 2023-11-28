@@ -1,5 +1,6 @@
 import pandas as pd
 import boto3
+from botocore.exceptions import ClientError
 from io import BytesIO, StringIO
 from app.cloud_storage.cloud_storage_interface import CloudStorageInterface
 
@@ -127,35 +128,43 @@ class S3Manager(CloudStorageInterface):
         )
 
     def retrieve_dataFrames_from_sheets(
-        self, file_key, aws_bucket_name, file_format="excel"
+        self, file_key, container_name, file_format="excel"
     ):
         """
         Retrieve Pandas dataFrames from a file stored in S3.
 
         Parameters:
         - file_key: Key of the file in S3.
-        - aws_bucket_name: Name of the AWS S3 bucket.
+        - container_name: Name of the AWS S3 bucket.
         - file_format: File format for storing the data ('excel' or 'csv'). Default is 'excel'.
 
         Returns:
         - dataFrames: Dictionary where keys are sheet names and values are Pandas dataFrames.
         """
         # Download the file from S3
-        response = self.s3_client.get_object(Bucket=aws_bucket_name, Key=file_key)
-        file_content = response["Body"].read()
+        try:
+            response = self.s3_client.get_object(Bucket=container_name, Key=file_key)
+            file_content = response["Body"].read()
 
-        # Read the file into Pandas dataFrames based on the file format
-        if file_format == "excel":
-            with pd.ExcelFile(BytesIO(file_content)) as xls:
-                dataFrames = {
-                    sheet_name: pd.read_excel(xls, sheet_name)
-                    for sheet_name in xls.sheet_names
-                }
-        elif file_format == "csv":
-            dataFrames = {file_key: pd.read_csv(BytesIO(file_content))}
-        else:
-            raise ValueError(
-                "Invalid file format. Supported formats are 'excel' or 'csv'."
-            )
+            # Read the file into Pandas dataFrames based on the file format
+            sheet_data = []
+            if file_format == "excel":
+                with pd.ExcelFile(BytesIO(file_content)) as xls:
+                    sheet_data.extend(
+                        (sheet_name, pd.read_excel(xls, sheet_name))
+                        for sheet_name in xls.sheet_names
+                    )
+            elif file_format == "csv":
+                sheet_data.append((file_key, pd.read_csv(BytesIO(file_content))))
+            else:
+                raise ValueError("Invalid file format. Supported formats are 'excel' or 'csv'.")
 
-        return dataFrames
+            return sheet_data
+        except ClientError as e:
+            if e.response['Error']['Code'] == 'NoSuchKey':
+                raise ValueError(
+                    f"The specified key '{file_key}' does not exist in the S3 bucket"
+                ) from e
+            else:
+                print(f"Error retrieving file from S3: {e}")
+            return []
