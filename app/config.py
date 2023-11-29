@@ -1,13 +1,18 @@
 # config.py
+from enum import Enum
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
+class Environment(Enum):
+    PRODUCTION = "prod"
+    TEST = "non-prod"
 
 class Config:
     # App config
     APP_PORT = int(os.getenv("PORT", default=5001))
+    ENVIRONMENT = os.getenv("ENVIRONMENT", default=Environment.TEST.value)
     # AWS credentials
     AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
     AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
