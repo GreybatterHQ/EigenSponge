@@ -123,9 +123,7 @@ class S3Manager(CloudStorageInterface):
             Body=file_buffer.getvalue(), Bucket=container_name, Key=file_key
         )
 
-        return (
-            f"https://{container_name}.s3.{self.region_name}.amazonaws.com/{file_key}"
-        )
+        return f"s3://{container_name}/{file_key}"
 
     def retrieve_dataFrames_from_sheets(
         self, file_key, container_name, file_format="excel"

@@ -31,7 +31,7 @@ class AmazonScraper:
             "device_type": "desktop",
             "page_from": "1",
         }
-        print(query)
+        print(f'searching the results for {query}')
         try:
             response_json = request_handler(
                 self.url, "POST", data=payload, headers=self.headers
@@ -59,7 +59,7 @@ class AmazonScraper:
             "device_type": "desktop",
             "parse": True,
         }
-        print(product_id)
+        print(f'scraping data for {product_id}')
         try:
             response_json = request_handler(self.url, "POST", payload, self.headers)
             result = response_json.get("results")[0].get("content")
@@ -138,7 +138,6 @@ class AmazonScraper:
             return
 
     def scrape_products_data(self, product_ids_list):
-        products_df = pd.DataFrame()
         for product_id in product_ids_list:
             self.amazon_product(product_id)
             self.amazon_pricing(product_id)

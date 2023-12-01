@@ -1,5 +1,5 @@
 from flask import Blueprint, request
-from app.utils import create_response, validate_request_data
+from app.utils import create_response, generate_combinations, validate_request_data
 from app.enums.error_codes import ErrorCodes
 from app.enums.export_format import ExportFormat
 import pandas as pd
@@ -20,9 +20,9 @@ amazonScraper = AmazonScraper(Config.AMAZON_SCRAPE_BASE_URL, Config.API_BASIC_AU
 def scrape_amazon():
     try:
         data = request.get_json()
-        validate_request_data(data, ["brandName", "searchQuery", "exportFormat"])
-        brand_name = data.get("brandName")
-        search_query = data.get("searchQuery")
+        validate_request_data(data, ["brandNames", "searchQueries", "exportFormat"])
+        brand_names = data.get("brandNames")
+        search_queries = data.get("searchQueries")
         export_format_str = ExportFormat(data.get("exportFormat"))
 
         # Validate exportFormat as Enum
@@ -36,31 +36,25 @@ def scrape_amazon():
                 error_code=ErrorCodes.INVALID_REQUEST,
             )
 
-        input_dataFrame = pd.DataFrame(
-            {
-                "brandName": brand_name,
-                "searchQuery": search_query,
-            },
-            index=[0],
-        )
+        input_dataFrame, search_queries_list = generate_combinations(brand_names, search_queries, ' ')
         store_dict = {"input": input_dataFrame}
 
-        search_dataFrame_list = amazonScraper.amazon_search(
-            f'{brand_name} {search_query}'
-        )
-        amazon_product_ids = []
-        for sheet_name, df in search_dataFrame_list:
-            store_dict[sheet_name] = df
-            if not df.empty:
-                unique_asin_values = df["asin"].dropna().unique()
-                amazon_product_ids.extend(unique_asin_values)
-        amazon_product_ids = list(set(amazon_product_ids))
+        for query in search_queries_list[:1]:
+            print(f'scraping search list for query {query}')
+            search_dataFrame_list = amazonScraper.amazon_search(query)
+            amazon_product_ids = []
+            for sheet_name, df in search_dataFrame_list:
+                store_dict[sheet_name] = df
+                if not df.empty:
+                    unique_asin_values = df["asin"].dropna().unique()
+                    amazon_product_ids.extend(unique_asin_values)
+            amazon_product_ids = list(set(amazon_product_ids))
 
-        products_dataFrame_list = amazonScraper.scrape_products_data(
-            amazon_product_ids
-        )
-        for sheet_name, df in products_dataFrame_list:
-            store_dict[sheet_name] = df
+            products_dataFrame_list = amazonScraper.scrape_products_data(
+                amazon_product_ids
+            )
+            for sheet_name, df in products_dataFrame_list:
+                store_dict[sheet_name] = df
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         file_name = f"amazon_{timestamp}"

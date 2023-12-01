@@ -1,6 +1,6 @@
 from flask import Blueprint, request
 from app.data_scraper.instagram import InstagramScraper
-from app.utils import create_response, validate_request_data
+from app.utils import create_response, generate_combinations, validate_request_data
 from app.enums.error_codes import ErrorCodes
 from app.enums.export_format import ExportFormat
 import pandas as pd
@@ -22,9 +22,9 @@ instagram_scraper = InstagramScraper(
 def scrape_hashtag_data():
     try:
         data = request.get_json()
-        validate_request_data(data, ["brandName", "hashtag", "exportFormat"])
-        brand_name = data.get("brandName")
-        hashtag = data.get("hashtag")
+        validate_request_data(data, ["brandNames", "hashtags", "exportFormat"])
+        brand_names = data.get("brandNames")
+        hashtags = data.get("hashtags")
         export_format_str = ExportFormat(data.get("exportFormat"))
 
         # Validate exportFormat as Enum
@@ -38,21 +38,14 @@ def scrape_hashtag_data():
                 error_code=ErrorCodes.INVALID_REQUEST,
             )
 
-        input_dataFrame = pd.DataFrame(
-            {
-                "brandName": brand_name,
-                "hashtag": hashtag,
-            },
-            index=[0],
-        )
+        input_dataFrame, search_queries_list = generate_combinations(brand_names, hashtags, '')
         store_dict = {"input": input_dataFrame}
         try:
-            sheet_name, df = instagram_scraper.scrape_hashtag_data(
-                f"{brand_name}{hashtag}"
-            )
+            for query in search_queries_list:
+                sheet_name, df = instagram_scraper.scrape_hashtag_data(query)
+                print(f'successfully scraped data for hashtag {query}')
         except Exception as e:
-            print(f"failed to scrape data for {hashtag} due to {e}")
-            raise ValueError(f"failed to scrape data for hashtag {hashtag}") from e
+            raise ValueError("failed to scrape data for hashtag") from e
         store_dict[sheet_name] = df
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -79,8 +72,8 @@ def scrape_user_data():
     try:
         username = request.args.get('username')
         data = request.get_json()
-        validate_request_data(data, ["brandName", "exportFormat"])
-        brand_name = data.get("brandName")
+        validate_request_data(data, ["brandNames", "exportFormat"])
+        brand_names = data.get("brandNames")
         export_format_str = ExportFormat(data.get("exportFormat"))
 
         # Validate exportFormat as Enum
@@ -94,13 +87,7 @@ def scrape_user_data():
                 error_code=ErrorCodes.INVALID_REQUEST,
             )
 
-        input_dataFrame = pd.DataFrame(
-            {
-                "brandName": brand_name,
-                "username": username,
-            },
-            index=[0],
-        )
+        input_dataFrame, _ = generate_combinations(brand_names, '')
         store_dict = {"input": input_dataFrame}
         try:
             user_details_list = instagram_scraper.scrape_user_data(username)
