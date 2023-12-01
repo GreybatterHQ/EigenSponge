@@ -15,7 +15,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Make port 80 available to the world outside this container
 EXPOSE 5000
 
-ENV FLASK_APP=run.py
-
 # Run app.py when the container launches
 CMD ["python", "run.py"]

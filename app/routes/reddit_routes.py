@@ -1,5 +1,5 @@
 from flask import Blueprint, request
-from app.utils import create_response, validate_request_data
+from app.utils import create_response, generate_combinations, validate_request_data
 from app.enums.error_codes import ErrorCodes
 from app.enums.export_format import ExportFormat
 import pandas as pd
@@ -20,9 +20,9 @@ redditScraper = RedditScraper(Config.REDDIT_SCRAPE_BASE_URL, Config.SOCIAL_MEDIA
 def scrape_reddit():
     try:
         data = request.get_json()
-        validate_request_data(data, ["brandName", "subreddit", "exportFormat"])
-        brand_name = data.get("brandName")
-        subreddit = data.get("subreddit")
+        validate_request_data(data, ["brandNames", "subreddits", "exportFormat"])
+        brand_names = data.get("brandNames")
+        subreddit_list = data.get("subreddits")
         export_format_str = ExportFormat(data.get("exportFormat"))
 
         # Validate exportFormat as Enum
@@ -36,20 +36,14 @@ def scrape_reddit():
                 error_code=ErrorCodes.INVALID_REQUEST,
             )
 
-        input_dataFrame = pd.DataFrame(
-            {
-                "brandName": brand_name,
-                "subreddit": subreddit,
-            },
-            index=[0],
-        )
+        input_dataFrame, _ = generate_combinations(brand_names, subreddit_list, '')
         store_dict = {"input": input_dataFrame}
+        for subreddit in subreddit_list:
+            search_dataFrame_list = redditScraper.scrape_data(subreddit)
 
-        search_dataFrame_list = redditScraper.scrape_data(subreddit)
-
-        for sheet_name, df in search_dataFrame_list:
-            print(f'{sheet_name}')
-            store_dict[sheet_name] = df
+            for sheet_name, df in search_dataFrame_list:
+                print(f'{sheet_name}')
+                store_dict[sheet_name] = df
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         file_name = f"reddit_{timestamp}"

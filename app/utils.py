@@ -1,6 +1,7 @@
 # utils.py
 from flask import jsonify
-from app.enums.error_codes import ErrorCodes
+import pandas as pd
+from itertools import product
 
 def create_response(status, data=None, error=None, status_code=200, error_code=None):
     """
@@ -41,3 +42,23 @@ def validate_request_data(data, required_properties):
         prop for prop in required_properties if prop not in data
     ]:
         raise ValueError(f"Missing properties in the request: {', '.join(missing_properties)}")
+
+def generate_combinations(brand_names, search_queries=None, separator='-'):
+    """
+    Generate all combinations of brand names and search queries.
+
+    Parameters:
+        brand_names (list): List of brand names.
+        search_queries (list): List of search queries.
+        separator (str, optional): Separator between brand name and search query. Default is '-'.
+
+    Returns:
+        pd.DataFrame: DataFrame with columns 'brandName' and 'searchQuery'.
+        list: List of strings with all combinations of brandName and searchQuery.
+    """
+    # Generate all combinations of brand names and search queries
+    all_combinations = list(product(brand_names, search_queries))
+    df = pd.DataFrame(all_combinations, columns=['brandName', 'searchQuery'])
+    search_queries_list = [f"{brand}{separator}{query}" for brand, query in all_combinations]
+
+    return df, search_queries_list
