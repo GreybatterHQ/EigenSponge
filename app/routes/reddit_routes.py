@@ -42,7 +42,7 @@ def scrape_reddit():
             search_dataFrame_list = redditScraper.scrape_data(subreddit)
 
             for sheet_name, df in search_dataFrame_list:
-                print(f'{sheet_name}')
+                df["search_query"] = subreddit
                 store_dict[sheet_name] = df
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
