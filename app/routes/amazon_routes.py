@@ -1,4 +1,5 @@
 from flask import Blueprint, request
+from app.enums.sheet_names import SheetName
 from app.utils import create_response, generate_combinations, validate_request_data
 from app.enums.error_codes import ErrorCodes
 from app.enums.export_format import ExportFormat
@@ -39,11 +40,12 @@ def scrape_amazon():
         input_dataFrame, search_queries_list = generate_combinations(brand_names, search_queries, ' ')
         store_dict = {"input": input_dataFrame}
 
-        for query in search_queries_list[:1]:
+        for query in search_queries_list:
             print(f'scraping search list for query {query}')
             search_dataFrame_list = amazonScraper.amazon_search(query)
             amazon_product_ids = []
             for sheet_name, df in search_dataFrame_list:
+                df["search_query"] = query
                 store_dict[sheet_name] = df
                 if not df.empty:
                     unique_asin_values = df["asin"].dropna().unique()
@@ -54,6 +56,7 @@ def scrape_amazon():
                 amazon_product_ids
             )
             for sheet_name, df in products_dataFrame_list:
+                df['search_query'] = query
                 store_dict[sheet_name] = df
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

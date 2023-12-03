@@ -3,7 +3,6 @@ from app.data_scraper.instagram import InstagramScraper
 from app.utils import create_response, generate_combinations, validate_request_data
 from app.enums.error_codes import ErrorCodes
 from app.enums.export_format import ExportFormat
-import pandas as pd
 from app.cloud_storage.s3_manager import S3Manager
 from app.config import Config
 from datetime import datetime
@@ -43,6 +42,7 @@ def scrape_hashtag_data():
         try:
             for query in search_queries_list:
                 sheet_name, df = instagram_scraper.scrape_hashtag_data(query)
+                df["search_query"] = query
                 print(f'successfully scraped data for hashtag {query}')
         except Exception as e:
             raise ValueError("failed to scrape data for hashtag") from e
@@ -92,6 +92,7 @@ def scrape_user_data():
         try:
             user_details_list = instagram_scraper.scrape_user_data(username)
             for sheet_name, df in user_details_list:
+                df["search_query"] = brand_names
                 store_dict[sheet_name] = df
         except Exception as e:
             print(f"failed to scrape data for user {username} due to {e}")
