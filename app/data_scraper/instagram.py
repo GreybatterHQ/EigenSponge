@@ -27,8 +27,12 @@ class InstagramScraper:
             response_json = request_handler(self.url, "POST", payload, self.header)
         except Exception as e:
             print(f"An error occurred while fetching hashtag data {e}")
-            return
+            return SheetName.INSTAGRAM_POSTS.value, pd.DataFrame()
         hashtag_info = response_json["results"][0]["content"]["data"]["hashtag"]
+        # Check if the hashtag data is present or not
+        if hashtag_info is None:
+            print(f'no content found for the hashtag {hashtag}')
+            return SheetName.INSTAGRAM_POSTS.value, pd.DataFrame()
         hashtag_name = hashtag_info["name"]
         posts = hashtag_info["edge_hashtag_to_media"]["edges"]
 

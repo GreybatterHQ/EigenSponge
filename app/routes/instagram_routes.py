@@ -1,4 +1,5 @@
 from flask import Blueprint, request
+import pandas as pd
 from app.data_scraper.instagram import InstagramScraper
 from app.utils import create_response, generate_combinations, validate_request_data
 from app.enums.error_codes import ErrorCodes
@@ -37,16 +38,23 @@ def scrape_hashtag_data():
                 error_code=ErrorCodes.INVALID_REQUEST,
             )
 
+        brand_names = [brand.replace(' ', '').lower() for brand in brand_names]
+        hashtags = [tag.replace(' ', '').lower() for tag in hashtags]
+
         input_dataFrame, search_queries_list = generate_combinations(brand_names, hashtags, '')
         store_dict = {"input": input_dataFrame}
+        result_df = pd.DataFrame()
         try:
             for query in search_queries_list:
                 sheet_name, df = instagram_scraper.scrape_hashtag_data(query)
-                df["search_query"] = query
+                if df.empty:
+                    continue
+                df["search_queries"] = query
+                result_df = result_df.append(df)
                 print(f'successfully scraped data for hashtag {query}')
         except Exception as e:
-            raise ValueError("failed to scrape data for hashtag") from e
-        store_dict[sheet_name] = df
+            raise ValueError(f"failed to scrape data for hashtag for {query}") from e
+        store_dict[sheet_name] = result_df
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         file_name = f"instagram_{timestamp}"
