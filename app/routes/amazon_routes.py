@@ -41,12 +41,17 @@ def scrape_amazon():
         store_dict = {"input": input_dataFrame}
 
         for query in search_queries_list:
-            print(f'scraping search list for query {query}')
             search_dataFrame_list = amazonScraper.amazon_search(query)
             amazon_product_ids = []
             for sheet_name, df in search_dataFrame_list:
+                print(f'search query for sheet {sheet_name} search {query}')
                 df["search_query"] = query
-                store_dict[sheet_name] = df
+                if sheet_name not in store_dict:
+                    print(f'sheet {sheet_name} is not present')
+                    store_dict[sheet_name] = df
+                else:
+                    print(f'appending data to sheet {sheet_name}')
+                    store_dict[sheet_name] = (store_dict[sheet_name]).append(df)
                 if not df.empty:
                     unique_asin_values = df["asin"].dropna().unique()
                     amazon_product_ids.extend(unique_asin_values)
@@ -57,7 +62,12 @@ def scrape_amazon():
             )
             for sheet_name, df in products_dataFrame_list:
                 df['search_query'] = query
-                store_dict[sheet_name] = df
+                if sheet_name not in store_dict:
+                    print(f'sheet {sheet_name} does not exist')
+                    store_dict[sheet_name] = df
+                else:
+                    print(f'appending product details to {sheet_name}')
+                    store_dict[sheet_name] = store_dict[sheet_name].append(df)
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         file_name = f"amazon_{timestamp}"

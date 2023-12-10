@@ -31,7 +31,7 @@ class AmazonScraper:
             "device_type": "desktop",
             "page_from": "1",
         }
-        print(f'searching the results for {query}')
+
         try:
             response_json = request_handler(
                 self.url, "POST", data=payload, headers=self.headers
@@ -74,6 +74,7 @@ class AmazonScraper:
                 return
 
     def amazon_pricing(self, product_id):
+        print(f'fetching the pricing for {product_id}')
         payload = {
             "target": "amazon_pricing",
             "query": str(product_id),
@@ -93,6 +94,7 @@ class AmazonScraper:
             return
 
     def amazon_questions(self, product_id):
+        print(f'fetching the questions for {product_id}')
         payload = {
             "target": "amazon_questions",
             "query": str(product_id),
@@ -117,6 +119,7 @@ class AmazonScraper:
             return
 
     def amazon_reviews(self, product_id):
+        print(f'fetching the reviews for {product_id}')
         payload = {
             "target": "amazon_reviews",
             "query": str(product_id),

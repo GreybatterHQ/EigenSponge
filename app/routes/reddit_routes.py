@@ -43,7 +43,12 @@ def scrape_reddit():
 
             for sheet_name, df in search_dataFrame_list:
                 df["search_query"] = subreddit
-                store_dict[sheet_name] = df
+                if sheet_name not in store_dict:
+                    print(f'sheet {sheet_name} is not present')
+                    store_dict[sheet_name] = df
+                else:
+                    print(f'appending data to sheet {sheet_name}')
+                    store_dict[sheet_name] = (store_dict[sheet_name]).append(df)
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         file_name = f"reddit_{timestamp}"
