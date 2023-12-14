@@ -95,15 +95,22 @@ def scrape_user_data():
                 error_code=ErrorCodes.INVALID_REQUEST,
             )
 
-        input_dataFrame, _ = generate_combinations(brand_names, '')
+        input_dataFrame, _ = generate_combinations(brand_names, brand_names, '')
         store_dict = {"input": input_dataFrame}
         try:
             user_details_list = instagram_scraper.scrape_user_data(username)
             for sheet_name, df in user_details_list:
-                df["search_query"] = brand_names
+                df["search_query"] = brand_names[0]
                 store_dict[sheet_name] = df
         except Exception as e:
             print(f"failed to scrape data for user {username} due to {e}")
+            if "does not exist" in str(e):
+                return create_response(
+                    status=False,
+                    error="user not found",
+                    status_code=404,
+                    error_code=ErrorCodes.USER_NOT_FOUND,
+                )
             raise ValueError(f"failed to scrape data for user {username}") from e
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
