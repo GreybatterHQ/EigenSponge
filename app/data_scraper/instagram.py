@@ -65,11 +65,13 @@ class InstagramScraper:
         try:
             response_json = request_handler(self.url, "POST", payload, self.header)
         except Exception as e:
-            print(
+            raise ValueError(
                 f"An error occurred while fetching user profile data for {profile}: {e}"
-            )
-            return
+            ) from e
         user_data = response_json["results"][0]["content"]["account"]
+        if user_data["username"] == "":
+            raise ValueError(f'user {profile} does not exist')
+
         stats = response_json["results"][0]["content"]["stats"]
         posts = response_json["results"][0]["content"]["posts"]
 

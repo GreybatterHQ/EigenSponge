@@ -5,3 +5,4 @@ class ErrorCodes(Enum):
     AUTHENTICATION_FAILED = '1001'
     DATA_NOT_FOUND = '1002',
     GENERIC_SERVER_ERROR = '1003'
+    USER_NOT_FOUND = '1004'
