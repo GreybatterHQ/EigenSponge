@@ -88,6 +88,7 @@ class InstagramScraper:
         )
         print(f'user data fetched for instagram user {profile}')
         user_posts_df = pd.DataFrame()
+        print(f'scraping {len(posts)} for the user')
         for post in posts:
             user_posts_df = user_posts_df.append(
                 pd.DataFrame(
