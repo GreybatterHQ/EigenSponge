@@ -43,7 +43,7 @@ def validate_request_data(data, required_properties):
     ]:
         raise ValueError(f"Missing properties in the request: {', '.join(missing_properties)}")
 
-def generate_combinations(brand_names, search_queries=None, separator='-'):
+def generate_combinations(brand_names, search_queries=None, separator='-', column_names=None):
     """
     Generate all combinations of brand names and search queries.
 
@@ -58,7 +58,9 @@ def generate_combinations(brand_names, search_queries=None, separator='-'):
     """
     # Generate all combinations of brand names and search queries
     all_combinations = list(product(brand_names, search_queries))
-    df = pd.DataFrame(all_combinations, columns=['brandName', 'searchQuery'])
+    if column_names is None:
+        column_names = ['brandName', 'searchQuery']
+    df = pd.DataFrame(all_combinations, columns=column_names)
     search_queries_list = [f"{brand}{separator}{query}" for brand, query in all_combinations]
 
     return df, search_queries_list
