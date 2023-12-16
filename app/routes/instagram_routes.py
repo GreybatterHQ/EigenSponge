@@ -102,7 +102,6 @@ def scrape_user_data():
             try:
                 user_details_list = instagram_scraper.scrape_user_data(user)
                 for sheet_name, df in user_details_list:
-                    df["search_query"] = brand_names[0]
                     df["username"] = user
             except Exception as e:
                 print(f"failed to scrape data for user {user} due to {e}")
