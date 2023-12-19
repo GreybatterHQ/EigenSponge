@@ -103,15 +103,15 @@ def scrape_user_data():
                 user_details_list = instagram_scraper.scrape_user_data(user)
                 for sheet_name, df in user_details_list:
                     df["username"] = user
+                    if sheet_name not in store_dict:
+                        print(f'sheet {sheet_name} is not present')
+                        store_dict[sheet_name] = df
+                    else:
+                        print(f'appending data to sheet {sheet_name}')
+                        store_dict[sheet_name] = (store_dict[sheet_name]).append(df)
             except Exception as e:
                 print(f"failed to scrape data for user {user} due to {e}")
                 continue
-            if sheet_name not in store_dict:
-                print(f'sheet {sheet_name} is not present')
-                store_dict[sheet_name] = df
-            else:
-                print(f'appending data to sheet {sheet_name}')
-                store_dict[sheet_name] = (store_dict[sheet_name]).append(df)
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         file_name = f"instagram_user_{timestamp}"
