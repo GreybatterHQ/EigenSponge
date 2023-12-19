@@ -7,7 +7,7 @@ from app.enums.export_format import ExportFormat
 from app.cloud_storage.s3_manager import S3Manager
 from app.config import Config
 from datetime import datetime
-
+from app.enums.sheet_names import SheetName
 instagram_bp = Blueprint("v1/instagram", __name__)
 
 s3_manager = S3Manager(
@@ -103,15 +103,15 @@ def scrape_user_data():
                 user_details_list = instagram_scraper.scrape_user_data(user)
                 for sheet_name, df in user_details_list:
                     df["username"] = user
+                    if sheet_name not in store_dict:
+                        print(f'sheet {sheet_name} is not present')
+                        store_dict[sheet_name] = df
+                    else:
+                        print(f'appending data to sheet {sheet_name}')
+                        store_dict[sheet_name] = (store_dict[sheet_name]).append(df)
             except Exception as e:
                 print(f"failed to scrape data for user {user} due to {e}")
                 continue
-            if sheet_name not in store_dict:
-                print(f'sheet {sheet_name} is not present')
-                store_dict[sheet_name] = df
-            else:
-                print(f'appending data to sheet {sheet_name}')
-                store_dict[sheet_name] = (store_dict[sheet_name]).append(df)
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         file_name = f"instagram_user_{timestamp}"
