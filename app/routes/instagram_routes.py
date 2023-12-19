@@ -7,7 +7,7 @@ from app.enums.export_format import ExportFormat
 from app.cloud_storage.s3_manager import S3Manager
 from app.config import Config
 from datetime import datetime
-from app.enums.sheet_names import SheetName
+
 instagram_bp = Blueprint("v1/instagram", __name__)
 
 s3_manager = S3Manager(
